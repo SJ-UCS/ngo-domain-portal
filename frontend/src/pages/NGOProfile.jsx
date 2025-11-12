@@ -26,8 +26,10 @@ export default function NGOProfile(){
         const savedUser = localStorage.getItem('user');
         if (savedUser) {
           const userData = JSON.parse(savedUser);
-          setIsOwner(r.data.owner_id === userData.id);
-          if (r.data.owner_id === userData.id) {
+          // Compare as strings to handle type mismatch
+          const isOwnerCheck = String(r.data.owner_id) === String(userData.id);
+          setIsOwner(isOwnerCheck);
+          if (isOwnerCheck) {
             // Load volunteer applications if owner
             loadVolunteers();
           }
@@ -42,7 +44,8 @@ export default function NGOProfile(){
             const savedUser = localStorage.getItem('user');
             if (savedUser) {
               const userData = JSON.parse(savedUser);
-              setIsOwner(found.owner_id === userData.id);
+              // Compare as strings to handle type mismatch
+              setIsOwner(String(found.owner_id) === String(userData.id));
             }
           }
         });
