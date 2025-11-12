@@ -26,15 +26,18 @@ export default function NGOProfile(){
       .then(r => {
         setNgo(r.data);
         const savedUser = localStorage.getItem('user');
-        if (savedUser) {
+        if (savedUser && r.data.owner_id) {
           const userData = JSON.parse(savedUser);
-          // Compare as strings to handle type mismatch
+          // Compare as strings to handle type mismatch, only if owner_id exists
           const isOwnerCheck = String(r.data.owner_id) === String(userData.id);
           setIsOwner(isOwnerCheck);
           if (isOwnerCheck) {
             // Load volunteer applications if owner
             loadVolunteers();
           }
+        } else {
+          // No user logged in or no owner_id, so not owner
+          setIsOwner(false);
         }
       })
       .catch(() => {
@@ -44,10 +47,12 @@ export default function NGOProfile(){
           setNgo(found || null);
           if (found) {
             const savedUser = localStorage.getItem('user');
-            if (savedUser) {
+            if (savedUser && found.owner_id) {
               const userData = JSON.parse(savedUser);
-              // Compare as strings to handle type mismatch
+              // Compare as strings to handle type mismatch, only if owner_id exists
               setIsOwner(String(found.owner_id) === String(userData.id));
+            } else {
+              setIsOwner(false);
             }
           }
         });
@@ -96,9 +101,12 @@ export default function NGOProfile(){
 
   if(!ngo) return <div className="card">Loading...</div>;
   
+  // Only show warning if user is logged in, NGO has an owner, and user is NOT the owner
+  const shouldShowWarning = user && ngo.owner_id && !isOwner;
+  
   return (
     <div>
-      {user && !isOwner && (
+      {shouldShowWarning && (
         <div className="card mb-3" style={{backgroundColor: '#fef3c7', border: '1px solid #fbbf24'}}>
           <p className="text-sm">
             <strong>Note:</strong> You're viewing someone else's NGO. 
