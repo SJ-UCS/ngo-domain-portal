@@ -80,6 +80,32 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// Delete NGO (only owner can delete)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    // Verify user owns the NGO
+    const ngoCheck = await db.query(
+      'SELECT id, name FROM ngos WHERE id=$1 AND owner_id=$2',
+      [id, userId]
+    );
+    
+    if (ngoCheck.rowCount === 0) {
+      return res.status(403).json({ error: 'You can only delete your own NGO' });
+    }
+    
+    // Delete the NGO (cascading will delete campaigns, donations, and volunteers)
+    await db.query('DELETE FROM ngos WHERE id=$1', [id]);
+    
+    res.json({ message: 'NGO deleted successfully', ngo: ngoCheck.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not delete NGO' });
+  }
+});
+
 // Volunteer for a campaign
 router.post('/:ngoId/campaigns/:campaignId/volunteer', auth, async (req, res) => {
   try {

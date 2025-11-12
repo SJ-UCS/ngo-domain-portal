@@ -99,6 +99,32 @@ export default function NGOProfile(){
     }
   };
 
+  const handleDeleteNGO = async () => {
+    if (!isOwner) {
+      alert('You can only delete your own NGO');
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to delete "${ngo.name}"?\n\nThis will permanently delete:\n- The NGO\n- All campaigns\n- All donations\n- All volunteer applications\n\nThis action cannot be undone!`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    // Double confirmation
+    if (!window.confirm('This is your final confirmation. Delete this NGO?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/ngos/${id}`);
+      alert('NGO deleted successfully');
+      navigate('/ngos');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete NGO');
+    }
+  };
+
   if(!ngo) return <div className="card">Loading...</div>;
   
   // Only show warning if user is logged in, NGO has an owner, and user is NOT the owner
@@ -163,9 +189,18 @@ export default function NGOProfile(){
             )}
           </div>
           {isOwner && (
-            <Link to="/add-campaign" className="btn btn-primary ml-4">
-              + Add Campaign
-            </Link>
+            <div className="flex gap-2 ml-4">
+              <Link to="/add-campaign" className="btn btn-primary">
+                + Add Campaign
+              </Link>
+              <button
+                onClick={handleDeleteNGO}
+                className="btn btn-secondary"
+                style={{backgroundColor: '#dc2626', color: 'white', border: 'none'}}
+              >
+                Delete NGO
+              </button>
+            </div>
           )}
         </div>
       </div>
