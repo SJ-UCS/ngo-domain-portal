@@ -6,11 +6,46 @@ const router = express.Router();
 // Get all NGOs
 router.get('/', async (req, res) => {
   try {
-    const result = await db.query('SELECT id, name, domain, location, contact, description, objectives, goals FROM ngos ORDER BY id DESC');
+    const result = await db.query('SELECT id, name, domain, location, contact, description, objectives, goals, owner_id FROM ngos ORDER BY id DESC');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Could not fetch ngos' });
+  }
+});
+
+// Get user's volunteer applications (must be before /:id route)
+router.get('/my-volunteers', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await db.query(`
+      SELECT v.id, v.status, v.applied_at, c.title as campaign_title, n.name as ngo_name
+      FROM volunteers v
+      JOIN campaigns c ON v.campaign_id = c.id
+      JOIN ngos n ON c.ngo_id = n.id
+      WHERE v.user_id = $1
+      ORDER BY v.applied_at DESC
+    `, [userId]);
+    
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not fetch volunteer applications' });
+  }
+});
+
+// Get NGO by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await db.query('SELECT id, name, domain, location, contact, description, objectives, goals, owner_id FROM ngos WHERE id=$1', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'NGO not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not fetch NGO' });
   }
 });
 
@@ -38,7 +73,7 @@ router.post('/:ngoId/campaigns/:campaignId/volunteer', auth, async (req, res) =>
     
     // Check if campaign exists and belongs to the NGO
     const campaignResult = await db.query(
-      'SELECT id FROM campaigns WHERE id=$1 AND ngo_id=$2',
+      'SELECT c.id, c.title, n.name as ngo_name, n.owner_id FROM campaigns c JOIN ngos n ON c.ngo_id=n.id WHERE c.id=$1 AND c.ngo_id=$2',
       [campaignId, ngoId]
     );
     
@@ -56,36 +91,36 @@ router.post('/:ngoId/campaigns/:campaignId/volunteer', auth, async (req, res) =>
       return res.status(400).json({ error: 'Already volunteered for this campaign' });
     }
     
+    // Get user info for notification
+    const userResult = await db.query(
+      'SELECT name, email, mobile FROM users WHERE id=$1',
+      [userId]
+    );
+    const userInfo = userResult.rows[0];
+    
     // Add volunteer
     const result = await db.query(
       'INSERT INTO volunteers(user_id, campaign_id) VALUES($1, $2) RETURNING id, status, applied_at',
       [userId, campaignId]
     );
     
-    res.json({ message: 'Successfully volunteered for campaign', volunteer: result.rows[0] });
+    const campaign = campaignResult.rows[0];
+    
+    res.json({ 
+      message: 'Successfully volunteered for campaign', 
+      volunteer: result.rows[0],
+      notification: {
+        message: `${userInfo.name} has applied to volunteer for your campaign "${campaign.title}"`,
+        user_name: userInfo.name,
+        user_email: userInfo.email,
+        user_mobile: userInfo.mobile,
+        campaign_title: campaign.title,
+        ngo_name: campaign.ngo_name
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Could not volunteer for campaign' });
-  }
-});
-
-// Get user's volunteer applications
-router.get('/my-volunteers', auth, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const result = await db.query(`
-      SELECT v.id, v.status, v.applied_at, c.title as campaign_title, n.name as ngo_name
-      FROM volunteers v
-      JOIN campaigns c ON v.campaign_id = c.id
-      JOIN ngos n ON c.ngo_id = n.id
-      WHERE v.user_id = $1
-      ORDER BY v.applied_at DESC
-    `, [userId]);
-    
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Could not fetch volunteer applications' });
   }
 });
 

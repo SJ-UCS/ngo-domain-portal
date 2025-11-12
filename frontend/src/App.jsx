@@ -7,6 +7,7 @@ import NGOProfile from './pages/NGOProfile';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Donate from './pages/Donate';
+import AddCampaign from './pages/AddCampaign';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/ngos" element={<NGOs />} />
           <Route path="/ngos/:id" element={<NGOProfile />} />
           <Route path="/donate/:campaignId" element={<Donate />} />
+          <Route path="/add-campaign" element={<AddCampaign />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>
