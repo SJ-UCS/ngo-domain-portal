@@ -104,6 +104,9 @@ export default function NGOProfile(){
   // Only show warning if user is logged in, NGO has an owner, and user is NOT the owner
   const shouldShowWarning = user && ngo.owner_id && !isOwner;
   
+  const totalCollected = campaigns.reduce((sum, c) => sum + parseFloat(c.collected_amount || 0), 0);
+  const totalGoal = campaigns.reduce((sum, c) => sum + parseFloat(c.goal_amount || 0), 0);
+  
   return (
     <div>
       {shouldShowWarning && (
@@ -117,26 +120,77 @@ export default function NGOProfile(){
         </div>
       )}
       
+      {/* NGO Profile Header */}
       <div className="card">
         <div className="flex justify-between items-start">
-          <div>
+          <div className="flex-1">
             <h2>{ngo.name}</h2>
             <p className="text-secondary">{ngo.description}</p>
-            <div className="mt-2">
-              {ngo.domain && <span className="text-sm"><strong>Domain:</strong> {ngo.domain}</span>}
-              {ngo.location && <span className="text-sm ml-3"><strong>Location:</strong> {ngo.location}</span>}
-            </div>
-            {ngo.contact && (
-              <div className="mt-2 text-sm"><strong>Contact:</strong> {ngo.contact}</div>
+            
+            {isOwner && (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <strong className="text-sm text-secondary">Domain:</strong>
+                  <div className="text-lg">{ngo.domain || 'Not specified'}</div>
+                </div>
+                <div>
+                  <strong className="text-sm text-secondary">Location:</strong>
+                  <div className="text-lg">{ngo.location || 'Not specified'}</div>
+                </div>
+                {ngo.contact && (
+                  <div>
+                    <strong className="text-sm text-secondary">Contact:</strong>
+                    <div className="text-lg">{ngo.contact}</div>
+                  </div>
+                )}
+                {ngo.objectives && (
+                  <div>
+                    <strong className="text-sm text-secondary">Objectives:</strong>
+                    <div className="text-sm mt-1">{ngo.objectives}</div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {!isOwner && (
+              <div className="mt-2">
+                {ngo.domain && <span className="text-sm"><strong>Domain:</strong> {ngo.domain}</span>}
+                {ngo.location && <span className="text-sm ml-3"><strong>Location:</strong> {ngo.location}</span>}
+                {ngo.contact && (
+                  <div className="mt-2 text-sm"><strong>Contact:</strong> {ngo.contact}</div>
+                )}
+              </div>
             )}
           </div>
           {isOwner && (
-            <Link to="/add-campaign" className="btn btn-primary">
+            <Link to="/add-campaign" className="btn btn-primary ml-4">
               + Add Campaign
             </Link>
           )}
         </div>
       </div>
+
+      {/* Statistics for NGO Owner */}
+      {isOwner && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 my-4">
+          <div className="card text-center">
+            <div className="text-3xl font-bold text-blue-600">{campaigns.length}</div>
+            <div className="text-sm text-secondary mt-1">Total Campaigns</div>
+          </div>
+          <div className="card text-center">
+            <div className="text-3xl font-bold text-green-600">{volunteers.length}</div>
+            <div className="text-sm text-secondary mt-1">Volunteer Applications</div>
+          </div>
+          <div className="card text-center">
+            <div className="text-3xl font-bold text-purple-600">₹{totalCollected.toLocaleString()}</div>
+            <div className="text-sm text-secondary mt-1">Total Collected</div>
+          </div>
+          <div className="card text-center">
+            <div className="text-3xl font-bold text-orange-600">₹{totalGoal.toLocaleString()}</div>
+            <div className="text-sm text-secondary mt-1">Total Goal</div>
+          </div>
+        </div>
+      )}
 
       {isOwner && (
         <div className="card">
@@ -207,38 +261,90 @@ export default function NGOProfile(){
       )}
 
       <div className="card">
-        <h3>Campaigns</h3>
-        {campaigns.length === 0 && (
-          <p className="text-secondary">No campaigns yet.</p>
-        )}
-        {campaigns.map(c => (
-          <div key={c.id} className="card mb-3">
-            <h4>{c.title}</h4>
-            <p className="text-secondary">{c.description}</p>
-            <div className="flex justify-between items-center mt-3">
-              <div className="text-sm">
-                {c.goal_amount > 0 && (
-                  <span>Goal: ₹{parseFloat(c.goal_amount).toLocaleString()} • </span>
-                )}
-                Collected: ₹{parseFloat(c.collected_amount || 0).toLocaleString()}
-              </div>
-              <div className="flex gap-2">
-                {user && !isOwner && (
-                  <button
-                    onClick={() => handleVolunteer(c.id)}
-                    disabled={loading[c.id]}
-                    className="btn btn-secondary text-sm"
-                  >
-                    {loading[c.id] ? 'Applying...' : 'Apply as Volunteer'}
-                  </button>
-                )}
-                <Link to={`/donate/${c.id}`} className="btn btn-primary text-sm">
-                  Donate
-                </Link>
-              </div>
-            </div>
+        <div className="flex justify-between items-center mb-4">
+          <h3>Campaigns {isOwner && `(${campaigns.length})`}</h3>
+          {isOwner && campaigns.length === 0 && (
+            <Link to="/add-campaign" className="btn btn-primary text-sm">
+              Create Your First Campaign
+            </Link>
+          )}
+        </div>
+        {campaigns.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-secondary mb-4">No campaigns yet.</p>
+            {isOwner && (
+              <Link to="/add-campaign" className="btn btn-primary">
+                + Add Campaign
+              </Link>
+            )}
           </div>
-        ))}
+        ) : (
+          <div className="space-y-3">
+            {campaigns.map(c => {
+              const progress = c.goal_amount > 0 ? (c.collected_amount / c.goal_amount) * 100 : 0;
+              return (
+                <div key={c.id} className="p-4 bg-gray-50 rounded border hover:bg-gray-100 transition">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h4 className="text-lg font-semibold">{c.title}</h4>
+                      <p className="text-secondary text-sm mt-1">{c.description}</p>
+                      {c.goal_amount > 0 && (
+                        <div className="mt-3">
+                          <div className="flex justify-between text-xs text-secondary mb-1">
+                            <span>Progress</span>
+                            <span>{Math.min(progress, 100).toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(progress, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex gap-4 mt-3 text-sm">
+                        {c.goal_amount > 0 && (
+                          <div>
+                            <span className="text-secondary">Goal: </span>
+                            <span className="font-semibold">₹{parseFloat(c.goal_amount).toLocaleString()}</span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-secondary">Collected: </span>
+                          <span className="font-semibold text-green-600">₹{parseFloat(c.collected_amount || 0).toLocaleString()}</span>
+                        </div>
+                        {c.created_at && (
+                          <div className="text-xs text-muted">
+                            Created: {new Date(c.created_at).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    {user && !isOwner && (
+                      <button
+                        onClick={() => handleVolunteer(c.id)}
+                        disabled={loading[c.id]}
+                        className="btn btn-secondary text-sm"
+                      >
+                        {loading[c.id] ? 'Applying...' : 'Apply as Volunteer'}
+                      </button>
+                    )}
+                    <Link to={`/donate/${c.id}`} className="btn btn-primary text-sm">
+                      Donate
+                    </Link>
+                    {isOwner && (
+                      <Link to={`/ngos/${id}`} className="btn btn-secondary text-sm">
+                        View Details
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
