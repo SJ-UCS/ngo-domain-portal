@@ -34,6 +34,21 @@ router.get('/my-volunteers', auth, async (req, res) => {
   }
 });
 
+// Get NGOs owned by current user
+router.get('/my-ngos', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await db.query(
+      'SELECT id, name, domain, location, contact, description, objectives, goals FROM ngos WHERE owner_id=$1 ORDER BY id DESC',
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not fetch your NGOs' });
+  }
+});
+
 // Get NGO by ID
 router.get('/:id', async (req, res) => {
   try {

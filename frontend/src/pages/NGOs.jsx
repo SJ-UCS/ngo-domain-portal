@@ -4,15 +4,51 @@ import { Link } from 'react-router-dom';
 
 export default function NGOs(){
   const [ngos,setNgos] = useState([]);
+  const [myNgos, setMyNgos] = useState([]);
+  const [user, setUser] = useState(null);
+  
   useEffect(()=>{
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      // Get user's NGOs
+      api.get('/ngos/my-ngos')
+        .then(r => setMyNgos(r.data))
+        .catch(() => setMyNgos([]));
+    }
+    
     api.get('/ngos').then(r=>setNgos(r.data)).catch(()=>setNgos([]));
   },[]);
+  
   return (
     <div>
       <div className="card">
         <h2>Registered NGOs</h2>
         <p className="text-secondary">Discover NGOs making a difference in various causes and communities.</p>
       </div>
+      
+      {myNgos.length > 0 && (
+        <div className="card mb-4" style={{backgroundColor: '#dbeafe', border: '2px solid #3b82f6'}}>
+          <h3 className="text-lg font-semibold mb-2">My NGOs</h3>
+          <p className="text-sm text-secondary mb-3">Manage your NGOs and add campaigns</p>
+          <div className="space-y-2">
+            {myNgos.map(n => (
+              <div key={n.id} className="p-3 bg-white rounded border">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="font-semibold">{n.name}</h4>
+                    {n.domain && <span className="text-xs text-secondary">{n.domain}</span>}
+                  </div>
+                  <Link to={`/ngos/${n.id}`} className="btn btn-primary text-sm">
+                    Manage
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
       {ngos.map(n=>(
         <div key={n.id} className="card">
           <div className="flex justify-between items-start mb-3">

@@ -98,6 +98,17 @@ export default function NGOProfile(){
   
   return (
     <div>
+      {user && !isOwner && (
+        <div className="card mb-3" style={{backgroundColor: '#fef3c7', border: '1px solid #fbbf24'}}>
+          <p className="text-sm">
+            <strong>Note:</strong> You're viewing someone else's NGO. 
+            {user.role === 'ngo' && (
+              <span> To add campaigns, visit <Link to="/ngos" className="text-blue-600 underline">your own NGO profile</Link>.</span>
+            )}
+          </p>
+        </div>
+      )}
+      
       <div className="card">
         <div className="flex justify-between items-start">
           <div>
