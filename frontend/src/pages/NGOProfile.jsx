@@ -138,39 +138,71 @@ export default function NGOProfile(){
         </div>
       </div>
 
-      {isOwner && volunteers.length > 0 && (
+      {isOwner && (
         <div className="card">
-          <h3>Volunteer Applications</h3>
-          <div className="space-y-2">
-            {volunteers.map(v => (
-              <div key={v.id} className="p-3 bg-gray-50 rounded border">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-semibold">{v.user_name}</div>
-                    <div className="text-sm text-secondary">
-                      Applied for: <strong>{v.campaign_title}</strong>
-                    </div>
-                    <div className="text-xs text-muted mt-1">
-                      Applied on: {new Date(v.applied_at).toLocaleDateString()}
-                    </div>
-                    {v.user_email && (
-                      <div className="text-xs text-muted">Email: {v.user_email}</div>
-                    )}
-                    {v.user_mobile && (
-                      <div className="text-xs text-muted">Mobile: {v.user_mobile}</div>
-                    )}
-                  </div>
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    v.status === 'approved' ? 'bg-green-100 text-green-800' :
-                    v.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {v.status}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="flex justify-between items-center mb-4">
+            <h3>Volunteer Applications</h3>
+            {volunteers.length > 0 && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                {volunteers.length} application{volunteers.length !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
+          {volunteers.length === 0 ? (
+            <p className="text-secondary">No volunteer applications yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {volunteers.map(v => (
+                <div key={v.id} className="p-4 bg-gray-50 rounded border hover:bg-gray-100 transition">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-xl">👤</div>
+                        <div>
+                          <div className="font-semibold text-lg">{v.user_name}</div>
+                          <div className="text-xs text-muted">
+                            Applied on: {new Date(v.applied_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="ml-8">
+                        <div className="text-sm text-secondary mb-2">
+                          <strong>Campaign:</strong> {v.campaign_title}
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-xs">
+                          {v.user_email && (
+                            <div>
+                              <strong>Email:</strong> 
+                              <a href={`mailto:${v.user_email}`} className="text-blue-600 hover:underline ml-1">
+                                {v.user_email}
+                              </a>
+                            </div>
+                          )}
+                          {v.user_mobile && (
+                            <div>
+                              <strong>Mobile:</strong> 
+                              <a href={`tel:${v.user_mobile}`} className="text-blue-600 hover:underline ml-1">
+                                {v.user_mobile}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right ml-4">
+                      <span className={`px-3 py-1 rounded text-sm font-semibold ${
+                        v.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        v.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

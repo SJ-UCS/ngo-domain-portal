@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Donate from './pages/Donate';
 import AddCampaign from './pages/AddCampaign';
+import UserProfile from './pages/UserProfile';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -51,7 +52,7 @@ export default function App() {
           
           {user ? (
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
+              <Link to="/profile" className="flex items-center gap-2 hover:opacity-80">
                 <span className="text-2xl">{user.profile_icon || '👤'}</span>
                 <div className="text-sm">
                   <div className="font-semibold">{user.name}</div>
@@ -59,7 +60,7 @@ export default function App() {
                     {campaignCount} campaign{campaignCount !== 1 ? 's' : ''}
                   </div>
                 </div>
-              </div>
+              </Link>
               <button 
                 onClick={handleLogout}
                 className="btn btn-secondary text-sm"
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="/ngos/:id" element={<NGOProfile />} />
           <Route path="/donate/:campaignId" element={<Donate />} />
           <Route path="/add-campaign" element={<AddCampaign />} />
+          <Route path="/profile" element={<UserProfile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>

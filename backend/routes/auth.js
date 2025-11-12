@@ -68,7 +68,7 @@ router.get('/profile', auth, async (req, res) => {
     
     // Get user details
     const userResult = await db.query(
-      'SELECT id,name,email,role,age,mobile,area,profile_icon FROM users WHERE id=$1',
+      'SELECT id,name,email,role,age,mobile,area,profile_icon,created_at FROM users WHERE id=$1',
       [userId]
     );
     
@@ -94,6 +94,57 @@ router.get('/profile', auth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Could not fetch profile' });
+  }
+});
+
+// Get user's detailed participation (donations and volunteer applications)
+router.get('/profile/participations', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get donations
+    const donationsResult = await db.query(`
+      SELECT 
+        d.id,
+        d.amount,
+        d.donated_at,
+        c.id as campaign_id,
+        c.title as campaign_title,
+        c.description as campaign_description,
+        n.id as ngo_id,
+        n.name as ngo_name
+      FROM donations d
+      JOIN campaigns c ON d.campaign_id = c.id
+      JOIN ngos n ON c.ngo_id = n.id
+      WHERE d.user_id = $1
+      ORDER BY d.donated_at DESC
+    `, [userId]);
+    
+    // Get volunteer applications
+    const volunteersResult = await db.query(`
+      SELECT 
+        v.id,
+        v.status,
+        v.applied_at,
+        c.id as campaign_id,
+        c.title as campaign_title,
+        c.description as campaign_description,
+        n.id as ngo_id,
+        n.name as ngo_name
+      FROM volunteers v
+      JOIN campaigns c ON v.campaign_id = c.id
+      JOIN ngos n ON c.ngo_id = n.id
+      WHERE v.user_id = $1
+      ORDER BY v.applied_at DESC
+    `, [userId]);
+    
+    res.json({
+      donations: donationsResult.rows,
+      volunteers: volunteersResult.rows
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Could not fetch participations' });
   }
 });
 
