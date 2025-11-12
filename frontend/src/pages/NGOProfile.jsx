@@ -2,6 +2,8 @@ import React, {useEffect, useState} from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 
+// NGO Profile component with campaign creation and volunteer features
+
 export default function NGOProfile(){
   const { id } = useParams();
   const navigate = useNavigate();
